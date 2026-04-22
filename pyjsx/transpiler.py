@@ -265,21 +265,21 @@ class Transpiler:
     def __init__(self, source: str):
         self.source = source
         self.tokenizer = Tokenizer(source)
-        self.output = StringIO()
+        self.output = []
         self.curr = 0
 
     def transpile(self) -> str:
         tokens = list(self.tokenizer.tokenize())
         while self.curr < len(tokens):
             if tokens[self.curr].type not in {TokenType.JSX_OPEN, TokenType.JSX_FRAGMENT_OPEN}:
-                self.output.write(tokens[self.curr].value)
+                self.output.append(tokens[self.curr].value)
                 self.curr += 1
             else:
                 queue = TokenQueue(tokens, self.curr, raw=self.source)
                 jsx = parse_jsx(queue)
                 self.curr = queue.curr
-                self.output.write(str(jsx))
-        return self.output.getvalue()
+                self.output.append(jsx)
+        return self.output
 
 
 def transpile(source: str) -> str:
