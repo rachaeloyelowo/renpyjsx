@@ -1,5 +1,3 @@
-// small sample of renpyjsx code to test with
-
 <Label name="start">
     <Character var="e">Eileen</Character>
 
