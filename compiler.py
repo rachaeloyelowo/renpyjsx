@@ -1,6 +1,8 @@
 from pyjsx.transpiler import (transpile, JSXElement, JSXExpression, JSXNamedAttribute, JSXText)
 
-# all classes
+# all classes *remember that classes are blueprints for objects*
+
+# label class; each label has properties, children inside the label, and a name
 class Label:
     def __init__(self, props, children):
         self.props = props
@@ -8,6 +10,10 @@ class Label:
 
         self.label_name = props['name']
 
+
+
+# character class; each character has properties one of which is the variable representation of the characters name and
+# children that represents the character's name/variable value (only one child is allowed) 
 class Character:
     def __init__(self, props, children):
         self.props = props
@@ -16,19 +22,47 @@ class Character:
         self.char_name = props['var']
         self.char_val = children[0]
 
+# say class; each piece of dialogue has a character's name/variable name and the dialogue; the name is in the properties under 
+# 'character' key so there should only be one key-value pair for the say class; the actual dialogue is in the children (children can be 
+# the dialogue or a variable name)
+
+# if the value passed in as the 'character''s value, should have no quotes --> thats why all characters need to be evalutated before anything else
 class Say:
     def __init__(self, props, children):
         self.props = props
         self.children = children
 
+        # check if there is a character prop, if not raises an error
+        if 'character' not in props:
+            raise Exception("Say element needs a 'character' prop to work")
+
         self.char_name = props['character']
-        self.dialogue = ""
-        for child in children:
-            if isinstance(child, str):
-                self.dialogue += child
+        self.dialogue = self.build_dialogue(children)
+
+    def build_dialogue(children_arr) -> str:
+        dialogue = ""
+
+        for child in children_arr:
+            if isinstance(child, str): # checks if current child node is text
+                dialogue += child
+            elif isinstance(child, Var):
+                dialogue += '[' + Var name + ']' # INCOMPLETE --> NEED TO CODE VAR CLASS
+
+        return dialogue
+
 
         # will fix later to handle expressions
 
+# can be changed after definition
+class Default:
+    def __init__(self):
+        pass
+
+# meant to be static - should not be changed
+class Define:
+    def __init__(self):
+        pass
+    
 
 
 j_file = open("game.jsx", "r")
@@ -37,11 +71,12 @@ converted_code = transpile(code) # converted code is an array of JSXElement obje
 
 print(converted_code)
 
-# this dictionary stores all the important values that need to be stored; ie. Characters and Labels
+# this dictionary stores all the important values that need to be stored; ie. Characters, Labels, Defines, and Defaults
 stored_vals = {
     'labels' : {},
     'characters' : {},
-    'variables' : {}
+    'defines' : {},
+    'defaults' : {}
 }
 
 # we want to evaluate each JSX object with evaluate function; for now i will convert them into dictionaries with three key values: {type, props, children}, type is a class, props is a dict, and children is an array
@@ -57,6 +92,8 @@ def evaluate(root_node, stored_vals):
             'Label' : Label,
             'Character' : Character,
             'Say' : Say,
+            'Default' : Default,
+            'Define' : Define
         }
 
         # key value pairs of the types of elements that need to be stored and which dictionary they need to be stored in
@@ -67,7 +104,15 @@ def evaluate(root_node, stored_vals):
             },
             Character : {
                 'stored_location' : 'characters',
-                'name_location' : 'var' # is in props so props['var'] would give the name of the character ie 'e'
+                'name_location' : 'name' # is in props so props['var'] would give the name of the character ie 'e'
+            },
+            Default : {
+                'stored_location' : 'defines',
+                'name_location' : 'name'
+            },
+            Define : {
+                'stored_location' : 'defaults',
+                'name_location' : 'name'
             }
         }
 
@@ -91,15 +136,21 @@ def evaluate(root_node, stored_vals):
         for child in root_node.children:
             children.append(evaluate(child, stored_vals))
         
-        # after adding all the children, if this is a Character element, checks for potential errors
-        if element_type == Character:
+        # after adding all the children, if this is a Character/Defualt/Define element, checks for potential errors
+        if element_type == Character or element_type == Define or element_type == Default:
+
+            # handles general problem
             if len(children) < 1:
-                raise Exception("You must assign a value to this Character")
+                raise Exception(f"You must assign a value to this {root_node.name} variable.")
             elif len(children) > 1:
-                raise Exception("You cannot have more than one value for the Character")
+                raise Exception(f"You cannot have more than one value type for this {root_node.name} variable.")
             
-            if not isinstance(children[0], str):
+            # handles type specific problems
+            if element_type == Character and not isinstance(children[0], str):
                 raise Exception("The value of this Character must be a string")
+            
+            if (element_type == Define or element_type == Default):
+                kj
 
         element_obj = element_type(props, children)
 
@@ -123,6 +174,20 @@ def evaluate(root_node, stored_vals):
     elif isinstance(root_node, JSXNamedAttribute):
         # computes one attribute as a tuple of 2 items, the name of the attribute and the value of the attribute
         return (root_node.name, evaluate(root_node.value, stored_vals))
+    
+    elif isinstance(root_node, JSXExpression):
+        value = ''
+        if len(root_node.children) < 1 :
+            raise Exception(f"This expression needs a value.")
+        elif len(root_node.children) > 1 :
+            value = "".join(root_node.children)
+        else: 
+            value = root_node.children[0]
+        # returns the value as an integer
+        if isInteger(value):
+            return int(value)
+        
+        return value
 
     # text
     elif isinstance(root_node, JSXText):
@@ -131,3 +196,11 @@ def evaluate(root_node, stored_vals):
     # strings
     elif isinstance(root_node, str): # handles strings
         return root_node.strip(" ' ")
+
+# checks if a string can be an int * MIGHT DO ONE FOR FLOAT*
+def isInteger(string):
+    try:
+        int(string)
+        return True
+    except ValueError:
+        return False
