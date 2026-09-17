@@ -194,7 +194,9 @@ def evaluate(root_node, stored_vals):
 
     # strings
     elif isinstance(root_node, str): # handles strings
-        return root_node.strip(" ' ")
+        if root_node.startswith('"') and root_node.endswith('"'):
+            return root_node[-1:1]
+        return root_node
 
 # checks if a string can be an int * MIGHT DO ONE FOR FLOAT*
 def isInteger(string):
