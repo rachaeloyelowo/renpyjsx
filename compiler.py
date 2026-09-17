@@ -67,7 +67,7 @@ class Define:
     
 
 
-j_file = open("game.jsx", "r")
+j_file = open("test.rpyjsx", "r")
 code = j_file.read()
 converted_code = transpile(code) # converted code is an array of JSXElement objects
 
@@ -110,11 +110,11 @@ def evaluate(root_node, stored_vals):
             },
             Default : {
                 'stored_location' : 'defines',
-                'name_location' : 'name'
+                'name_location' : 'var'
             },
             Define : {
                 'stored_location' : 'defaults',
-                'name_location' : 'name'
+                'name_location' : 'var'
             }
         }
 
@@ -152,7 +152,9 @@ def evaluate(root_node, stored_vals):
                 raise Exception("The value of this Character must be a string")
             
             if (element_type == Define or element_type == Default):
-                kj
+                if not isinstance(children[0], (str, int, float)): # only strings, floats, and integers 
+                    raise Exception(f"The value of this {root_node.name} should be a string , float, or integer.")
+                
 
         element_obj = element_type(props, children)
 
