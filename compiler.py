@@ -57,13 +57,21 @@ class Say:
 
 # can be changed after definition
 class Default:
-    def __init__(self):
-        pass
+    def __init__(self, props, children):
+        self.props = props
+        self.children = children
+
+        self.default_name = props['var']
+        self.default_val = children[0]
 
 # meant to be static - should not be changed
 class Define:
-    def __init__(self):
-        pass
+    def __init__(self, props, children):
+        self.props = props
+        self.children = children
+
+        self.define_name = props['var']
+        self.define_val = children[0]
     
 
 
