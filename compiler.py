@@ -36,22 +36,24 @@ class Say:
         if 'character' not in props:
             raise Exception("Say element needs a 'character' prop to work")
 
-        self.char_name = props['character']
+        character = props['character']
+
+        if character in stored_vals['characters']:
+            self.char_name = character
+        else:
+            self.char_name = '"' + character + '"'
+
+
         self.dialogue = self.build_dialogue(children)
 
-    def build_dialogue(children_arr) -> str:
+    def build_dialogue(self, children_arr) -> str:
         dialogue = ""
 
         for child in children_arr:
-            if isinstance(child, str): # checks if current child node is text
-                dialogue += child
-            elif isinstance(child, Var):
-                dialogue += '[' + Var name + ']' # INCOMPLETE --> NEED TO CODE VAR CLASS
+            dialogue += child
 
         return dialogue
 
-
-        # will fix later to handle expressions
 
 # can be changed after definition
 class Default:
@@ -104,7 +106,7 @@ def evaluate(root_node, stored_vals):
             },
             Character : {
                 'stored_location' : 'characters',
-                'name_location' : 'name' # is in props so props['var'] would give the name of the character ie 'e'
+                'name_location' : 'var' # is in props so props['var'] would give the name of the character ie 'e'
             },
             Default : {
                 'stored_location' : 'defines',
@@ -174,20 +176,15 @@ def evaluate(root_node, stored_vals):
     elif isinstance(root_node, JSXNamedAttribute):
         # computes one attribute as a tuple of 2 items, the name of the attribute and the value of the attribute
         return (root_node.name, evaluate(root_node.value, stored_vals))
-    
+
+    # expressions
     elif isinstance(root_node, JSXExpression):
-        value = ''
         if len(root_node.children) < 1 :
-            raise Exception(f"This expression needs a value.")
-        elif len(root_node.children) > 1 :
-            value = "".join(root_node.children)
-        else: 
-            value = root_node.children[0]
-        # returns the value as an integer
-        if isInteger(value):
-            return int(value)
+            raise Exception(f"This expression needs a value.") # error if no val in expression  
+     
+        value += "".join(root_node.children)
         
-        return value
+        return '[' + value + "]"
 
     # text
     elif isinstance(root_node, JSXText):
