@@ -7,6 +7,8 @@ from io import StringIO
 from pyjsx.elements import is_builtin_element
 from pyjsx.tokenizer import Token, Tokenizer, TokenType
 
+import textwrap
+
 
 UNESCAPED_QUOTES = re.compile(r'(?<!\\)"')
 
@@ -199,11 +201,21 @@ def parse_jsx_children(queue: TokenQueue) -> list[JSXValue]:
 def parse_jsx_text(queue: TokenQueue) -> JSXText | None:
     value = queue.pop_type(TokenType.JSX_TEXT).value
     lines = value.split("\n")
-    lines = [line.strip() for line in lines]
-    lines = [line for line in lines if line]
+    lines = [line for line in lines if line.strip()] # for each line in the lines list, if there is more than white space, keep the line in the list 
+
     if not lines:
         return None
+
+    for i in range(len(lines)):
+        indent = len(lines[i]) - len(lines[i].lstrip()) # finds how many spaces of leading indent
+
+        if indent >= 4:
+            lines[i] = lines[i].lstrip() # if leading indent is equal to or greater than four, it will be stripped
+
     value = " ".join(lines)
+    print(repr(value))
+
+
     return JSXText(value)
 
 

@@ -10,6 +10,9 @@ class Label:
 
         self.label_name = props['name']
 
+    def __repr__(self):
+        return f"Label(var={self.label_name!r})"
+
 
 
 # character class; each character has properties one of which is the variable representation of the characters name and
@@ -21,6 +24,9 @@ class Character:
 
         self.char_name = props['var']
         self.char_val = children[0]
+
+    def __repr__(self):
+        return f"Character(var={self.char_name!r}, value={self.char_val!r})"
 
 # say class; each piece of dialogue has a character's name/variable name and the dialogue; the name is in the properties under 
 # 'character' key so there should only be one key-value pair for the say class; the actual dialogue is in the children (children can be 
@@ -38,13 +44,11 @@ class Say:
 
         character = props['character']
 
-        if character in stored_vals['characters']:
-            self.char_name = character
-        else:
-            self.char_name = '"' + character + '"'
-
-
+        self.char_name = character
         self.dialogue = self.build_dialogue(children)
+
+    def __repr__(self):
+        return f"Say(var={self.char_name!r}, value={self.dialogue!r})"
 
     def build_dialogue(self, children_arr) -> str:
         dialogue = ""
@@ -64,6 +68,9 @@ class Default:
         self.default_name = props['var']
         self.default_val = children[0]
 
+    def __repr__(self):
+        return f"Default(var={self.default_name!r}, value={self.default_val!r})"
+
 # meant to be static - should not be changed
 class Define:
     def __init__(self, props, children):
@@ -72,14 +79,18 @@ class Define:
 
         self.define_name = props['var']
         self.define_val = children[0]
+
+    def __repr__(self):
+        return f"Define(var={self.define_name!r}, value={self.define_val!r})"
     
 
 
-j_file = open("test.rpyjsx", "r")
+j_file = open("text_test.rpyjsx", "r")
 code = j_file.read()
 converted_code = transpile(code) # converted code is an array of JSXElement objects
 
-print(converted_code)
+# print(converted_code)
+
 
 # this dictionary stores all the important values that need to be stored; ie. Characters, Labels, Defines, and Defaults
 stored_vals = {
@@ -117,11 +128,11 @@ def evaluate(root_node, stored_vals):
                 'name_location' : 'var' # is in props so props['var'] would give the name of the character ie 'e'
             },
             Default : {
-                'stored_location' : 'defines',
+                'stored_location' : 'defaults',
                 'name_location' : 'var'
             },
             Define : {
-                'stored_location' : 'defaults',
+                'stored_location' : 'defines',
                 'name_location' : 'var'
             }
         }
@@ -192,7 +203,7 @@ def evaluate(root_node, stored_vals):
         if len(root_node.children) < 1 :
             raise Exception(f"This expression needs a value.") # error if no val in expression  
      
-        value += "".join(root_node.children)
+        value = "".join(root_node.children)
         
         return '[' + value + "]"
 
@@ -202,8 +213,13 @@ def evaluate(root_node, stored_vals):
 
     # strings
     elif isinstance(root_node, str): # handles strings
+        if len(root_node) > 1:
+            if (root_node[0] == root_node[-1]) and (root_node[0] in ('"', "'")):
+                return root_node[1:-1]
+
+
         if root_node.startswith('"') and root_node.endswith('"'):
-            return root_node[-1:1]
+            return root_node[1:-1]
         return root_node
 
 # checks if a string can be an int * MIGHT DO ONE FOR FLOAT*
@@ -213,3 +229,17 @@ def isInteger(string):
         return True
     except ValueError:
         return False
+
+
+for node in converted_code:
+    evaluate(node, stored_vals)
+
+# print(stored_vals)
+label = stored_vals["labels"]["start"]
+
+print("Label children:", label.children)
+
+for child in label.children:
+    if isinstance(child, Say):
+        print("Speaker:", child.char_name)
+        print("Dialogue:", child.dialogue)

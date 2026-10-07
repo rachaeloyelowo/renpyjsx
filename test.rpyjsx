@@ -3,6 +3,6 @@
 <Character var="e">Eileen</Character>
 
 <Label name="start">
-    <Say character='"Eileen"'>Hello World. My name is {name}.</Say>
-    
+    <Say character='"Anna"'>Hello World. My name is {name}.</Say>
+    <Say character="e">Whats up</Say>
 </Label>

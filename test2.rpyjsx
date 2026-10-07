@@ -1,0 +1,12 @@
+<Define var="title">Novel</Define>
+<Default var="age">20</Default>
+
+<Character var="e">
+    Eileen
+</Character>
+
+<Label name="start">
+    <Say character="e">
+        Hello {age} whats up.
+    </Say>
+</Label>

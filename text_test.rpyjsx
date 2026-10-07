@@ -1,0 +1,7 @@
+<Default var="age">20</Default>
+
+<Label name="start">
+    <Say character="e">
+       I am {age}.
+    </Say>
+</Label>
