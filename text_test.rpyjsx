@@ -2,6 +2,6 @@
 
 <Label name="start">
     <Say character="e">
-       I am {age}.
+       I am {age + 1}.
     </Say>
 </Label>

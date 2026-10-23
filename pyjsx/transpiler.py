@@ -213,8 +213,6 @@ def parse_jsx_text(queue: TokenQueue) -> JSXText | None:
             lines[i] = lines[i].lstrip() # if leading indent is equal to or greater than four, it will be stripped
 
     value = " ".join(lines)
-    print(repr(value))
-
 
     return JSXText(value)
 

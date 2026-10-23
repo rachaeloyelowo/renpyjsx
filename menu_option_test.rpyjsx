@@ -1,0 +1,11 @@
+<Label name="start">
+    <Menu>
+
+        This is a menu.
+
+        <Option text="Option 1">This is option 1</Option>
+
+        <Option text="Option 2">This is option 2</Option>
+
+    </Menu>
+</Label>

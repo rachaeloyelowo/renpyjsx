@@ -8,10 +8,12 @@ class Label:
         self.props = props
         self.children = children
 
+        if len(props) != 1 or 'name' not in props:
+            raise Exception("Label needs a name property")
+        
         self.label_name = props['name']
 
-    def __repr__(self):
-        return f"Label(var={self.label_name!r})"
+
 
 
 
@@ -25,8 +27,6 @@ class Character:
         self.char_name = props['var']
         self.char_val = children[0]
 
-    def __repr__(self):
-        return f"Character(var={self.char_name!r}, value={self.char_val!r})"
 
 # say class; each piece of dialogue has a character's name/variable name and the dialogue; the name is in the properties under 
 # 'character' key so there should only be one key-value pair for the say class; the actual dialogue is in the children (children can be 
@@ -47,8 +47,6 @@ class Say:
         self.char_name = character
         self.dialogue = self.build_dialogue(children)
 
-    def __repr__(self):
-        return f"Say(var={self.char_name!r}, value={self.dialogue!r})"
 
     def build_dialogue(self, children_arr) -> str:
         dialogue = ""
@@ -68,9 +66,7 @@ class Default:
         self.default_name = props['var']
         self.default_val = children[0]
 
-    def __repr__(self):
-        return f"Default(var={self.default_name!r}, value={self.default_val!r})"
-
+   
 # meant to be static - should not be changed
 class Define:
     def __init__(self, props, children):
@@ -80,12 +76,40 @@ class Define:
         self.define_name = props['var']
         self.define_val = children[0]
 
-    def __repr__(self):
-        return f"Define(var={self.define_name!r}, value={self.define_val!r})"
     
 
+# children = array, props = dictionary
+class Menu:
+    def __init__(self, props, children):
+        self.props = props
+        self.children = children
 
-j_file = open("text_test.rpyjsx", "r")
+        if len(props) > 0:
+            raise Exception("Menu should not have any props.")
+
+        if not any(isinstance(child, Option) for child in children):
+            raise Exception("Menu needs at least one Option")
+
+        # technically should have no props, all children
+
+
+
+# remember that text in the menu is optional but it needs at least one option
+
+class Option: 
+    def __init__(self, props, children):
+        self.props = props
+        self.children = children
+
+        if len(props) != 1 or 'text' not in props:
+            raise Exception("Option needs a text property")
+        self.option_text = props['text']
+        
+
+
+
+
+j_file = open("menu_option_test.rpyjsx", "r")
 code = j_file.read()
 converted_code = transpile(code) # converted code is an array of JSXElement objects
 
@@ -114,7 +138,9 @@ def evaluate(root_node, stored_vals):
             'Character' : Character,
             'Say' : Say,
             'Default' : Default,
-            'Define' : Define
+            'Define' : Define,
+            'Menu' : Menu,
+            'Option' : Option
         }
 
         # key value pairs of the types of elements that need to be stored and which dictionary they need to be stored in
@@ -202,8 +228,8 @@ def evaluate(root_node, stored_vals):
     elif isinstance(root_node, JSXExpression):
         if len(root_node.children) < 1 :
             raise Exception(f"This expression needs a value.") # error if no val in expression  
-     
-        value = "".join(root_node.children)
+        
+        value = "".join(root_node.children) # takes all the children in the root node and joines them together bc pyjsx computes each char separated by a space as a child [no separator str]
         
         return '[' + value + "]"
 
@@ -233,13 +259,3 @@ def isInteger(string):
 
 for node in converted_code:
     evaluate(node, stored_vals)
-
-# print(stored_vals)
-label = stored_vals["labels"]["start"]
-
-print("Label children:", label.children)
-
-for child in label.children:
-    if isinstance(child, Say):
-        print("Speaker:", child.char_name)
-        print("Dialogue:", child.dialogue)
