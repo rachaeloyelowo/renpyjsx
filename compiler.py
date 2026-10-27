@@ -24,6 +24,9 @@ class Character:
         self.props = props
         self.children = children
 
+        if len(children) != 1:
+            raise Exception("Charcter can only be assigned to one value")
+
         self.char_name = props['var']
         self.char_val = children[0]
 
@@ -44,7 +47,10 @@ class Say:
 
         character = props['character']
 
-        self.char_name = character
+        self.char_name = character['value']
+        self.is_var = character['isVariable']
+
+
         self.dialogue = self.build_dialogue(children)
 
 
@@ -108,8 +114,10 @@ class Option:
 
 
 
+f = "text_test.rpyjsx"
+file_name = f.removesuffix(".rpyjsx")
 
-j_file = open("menu_option_test.rpyjsx", "r")
+j_file = open("text_test.rpyjsx", "r")
 code = j_file.read()
 converted_code = transpile(code) # converted code is an array of JSXElement objects
 
@@ -176,7 +184,7 @@ def evaluate(root_node, stored_vals):
 
         # deals with attributes
         for attribute in root_node.attributes:
-            a = evaluate(attribute, stored_vals)
+            a = evaluate(attribute, stored_vals)                
             props[a[0]] = a[1]
 
         # deals with children
@@ -216,12 +224,42 @@ def evaluate(root_node, stored_vals):
 
             stored_vals[s_l][props[key_name]] = element_obj
 
+         
+
         # returns an object corresponding to the right class
         return element_obj
-
-    # attributes
+        
+    # attributes -> <tag ATTRIBUTE> </tag>
     elif isinstance(root_node, JSXNamedAttribute):
         # computes one attribute as a tuple of 2 items, the name of the attribute and the value of the attribute
+
+        # root_node.name => the name of the attribute variable
+        # root_node.value => the value associated with the attribute variable
+
+        if root_node.name == "character":
+            # if there is a character attribute and its value is an expression, will combine all parts of JSXExpression and return the
+            # attribute name ("character") and a dictionary that stores the value and whether its a variable that is then used later when
+            # outputting the text
+
+            # ELSE will store the value but note that its not a variable
+
+            if isinstance(root_node.value, JSXExpression): 
+                value = "".join(root_node.value.children)
+
+                return (root_node.name, {
+                        "value" : value, 
+                        "isVariable" : True
+                        })
+
+            else : 
+                value = evaluate(root_node.value, stored_vals)
+
+                return (root_node.name, {
+                        "value" : value, 
+                        "isVariable" : False
+                        })
+
+        # or returns a tuple of the attribute name and its actual value
         return (root_node.name, evaluate(root_node.value, stored_vals))
 
     # expressions
@@ -259,3 +297,97 @@ def isInteger(string):
 
 for node in converted_code:
     evaluate(node, stored_vals)
+
+
+def generate(node, indent): # takes in the root node and outputs the renpy text in a renpy file
+    # go through each node, maybe recursively
+    out = ""
+
+    # character name is either a variable : no quotes, or a literal string : quotes
+    # each say should have an prop -> "character" : {value : value, isVar : True or False}
+    if isinstance(node, Say): # each case should give the text its outputting
+
+        space = " " * indent
+        
+        if node.is_var:
+            out += f'{space}{node.char_name} "{node.dialogue}"'
+        else:
+            out += f'{space}"{node.char_name}" "{node.dialogue}"'
+
+        return out
+
+    if isinstance(node, Label):
+
+        out += f"label {node.label_name}:\n"
+
+        for child in node.children:
+            out += f"{generate(child, indent + 4)}\n"
+
+        return out
+
+    if isinstance(node, Menu):
+        space = " " * indent
+
+        out += f'{space}menu:\n'
+        c_indent = indent + 4
+        c_space = " " * c_indent
+
+        for child in node.children:
+            if isinstance(child, str):
+                out += f'{c_space}"{child}"\n'
+
+            elif isinstance(child, Option):
+                out += generate(child, c_indent)
+
+        return out
+    
+    if isinstance(node, Option):
+        space = " " * indent
+
+        out += f'{space}"{node.option_text}":\n'
+        c_indent = indent + 4
+
+        for child in node.children:
+            out += f'{generate(child, c_indent)}\n'
+
+        return out
+
+    if isinstance(node, Character):
+        out += f'define {node.char_name} = Character("{node.char_val}")'
+        return out
+
+    if isinstance(node, Default):
+        out += f'default {node.default_name} = {node.default_val}'
+        return out
+
+    if isinstance(node, Define):
+        out += f'define {node.define_name} = {node.define_val}'
+        return out
+
+    
+    
+    
+# label = stored_vals['labels']['start']
+
+# output = generate(label, 0).rstrip() + "\n"
+
+# print(output)
+
+# print(generate(stored_vals["defaults"]["age"], 0))
+# print(generate(stored_vals["defaults"]["name"], 0))
+
+# print(generate(stored_vals["defines"]["title"], 0))
+# print(generate(stored_vals["defines"]["pi"], 0))
+
+output = ""
+
+# creates the file and puts all the generated code in it
+for val_dict in ["characters", "defines", "defaults", "labels"]:
+    for val in stored_vals[val_dict].values():
+        output += generate(val, 0) + "\n"
+    output += "\n"
+
+output = output.rstrip() + "\n"
+file = file_name + ".rpy"
+with open(file, "w") as rpy_file:
+    rpy_file.write(output)

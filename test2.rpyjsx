@@ -6,7 +6,7 @@
 </Character>
 
 <Label name="start">
-    <Say character="e">
+    <Say character={e}>
         Hello {age} whats up.
     </Say>
 </Label>

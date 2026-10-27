@@ -1,7 +1,20 @@
 <Default var="age">20</Default>
+<Default var="name">"Eileen"</Default>
+<Define var="title">"My Visual Novel"</Define>
+<Define var="pi">3.14</Define>
+<Character var="e">Eileen</Character>
+
 
 <Label name="start">
-    <Say character="e">
-       I am {age + 1}.
-    </Say>
+    <Menu>
+        What should I do?
+
+        <Option text="Go outside">
+            <Say character={e}>I went outside!</Say>
+        </Option>
+
+        <Option text="Stay inside">
+            <Say character={e}>I stayed inside!</Say>
+        </Option>
+    </Menu>
 </Label>
