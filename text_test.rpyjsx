@@ -1,7 +1,8 @@
 <Default var="age">20</Default>
 <Default var="name">"Eileen"</Default>
 <Define var="title">"My Visual Novel"</Define>
-<Define var="pi">3.14</Define>
+<Define var="num">10</Define>
+<Define var="stay">"stay"</Define>
 <Character var="e">Eileen</Character>
 
 
@@ -11,10 +12,28 @@
 
         <Option text="Go outside">
             <Say character={e}>I went outside!</Say>
+
         </Option>
 
         <Option text="Stay inside">
-            <Say character={e}>I stayed inside!</Say>
+            <Jump label = "inside"/>
+
+        </Option>
+
+        <Option text="Stay put">
+            <Jump expression = "stay"/>
+
         </Option>
     </Menu>
+    <Return/>
+</Label>
+
+<Label name="inside">
+    <Say character={e}>I stayed inside!</Say>
+    <Return/>
+</Label>
+
+<Label name="stay">
+    <Say character={e}>I stayed put!</Say>
+    <Return/>
 </Label>

@@ -1,3 +1,4 @@
+import sys
 from pyjsx.transpiler import (transpile, JSXElement, JSXExpression, JSXNamedAttribute, JSXText)
 
 # all classes *remember that classes are blueprints for objects*
@@ -12,8 +13,6 @@ class Label:
             raise Exception("Label needs a name property")
         
         self.label_name = props['name']
-
-
 
 
 
@@ -110,18 +109,50 @@ class Option:
         if len(props) != 1 or 'text' not in props:
             raise Exception("Option needs a text property")
         self.option_text = props['text']
-        
+
+
+class Jump:
+    def __init__(self, props, children):
+        self.props = props
+        self.children = children
+
+        if len(props) != 1 or ('label' not in props and 'expression' not in props):
+            raise Exception("Jump needs either a label property or expression property")
+        if len(children) != 0:
+            raise Exception("Jump shouldn't have any children.")
+
+        if 'label' in props:
+            self.destination = props['label']
+            self.jump_type = "label"
+        elif 'expression' in props:
+            self.destination = props['expression']
+            self.jump_type = "expression"
 
 
 
-f = "text_test.rpyjsx"
+class Return:
+    def __init__(self, props, children):
+        self.props = props
+        self.children = children
+
+        if len(props) != 0:
+            raise Exception("Return shouldn't have any properties.")
+        if len(children) != 0:
+            raise Exception("Return shouldn't have any children.")
+
+
+# actual call
+if len(sys.argv) != 2:
+    raise Exception("Need to add filename and only filename")
+f = sys.argv[1]
+if not f.endswith(".rpyjsx"):
+    raise Exception("File needs to end with .rpyjsx suffix")
+
 file_name = f.removesuffix(".rpyjsx")
 
-j_file = open("text_test.rpyjsx", "r")
+j_file = open(f, "r")
 code = j_file.read()
 converted_code = transpile(code) # converted code is an array of JSXElement objects
-
-# print(converted_code)
 
 
 # this dictionary stores all the important values that need to be stored; ie. Characters, Labels, Defines, and Defaults
@@ -148,7 +179,9 @@ def evaluate(root_node, stored_vals):
             'Default' : Default,
             'Define' : Define,
             'Menu' : Menu,
-            'Option' : Option
+            'Option' : Option,
+            'Jump' : Jump,
+            'Return' : Return
         }
 
         # key value pairs of the types of elements that need to be stored and which dictionary they need to be stored in
@@ -321,7 +354,7 @@ def generate(node, indent): # takes in the root node and outputs the renpy text 
         out += f"label {node.label_name}:\n"
 
         for child in node.children:
-            out += f"{generate(child, indent + 4)}\n"
+            out += f"{generate(child, indent + 4).rstrip("\n")}\n"
 
         return out
 
@@ -334,12 +367,12 @@ def generate(node, indent): # takes in the root node and outputs the renpy text 
 
         for child in node.children:
             if isinstance(child, str):
-                out += f'{c_space}"{child}"\n'
+                out += f'{c_space}"{child}"\n\n'
 
             elif isinstance(child, Option):
-                out += generate(child, c_indent)
+                out += f'{generate(child, c_indent).rstrip("\n")}\n\n'
 
-        return out
+        return out.rstrip("\n")
     
     if isinstance(node, Option):
         space = " " * indent
@@ -348,7 +381,7 @@ def generate(node, indent): # takes in the root node and outputs the renpy text 
         c_indent = indent + 4
 
         for child in node.children:
-            out += f'{generate(child, c_indent)}\n'
+            out += f'{generate(child, c_indent).rstrip("\n")}\n'
 
         return out
 
@@ -364,20 +397,22 @@ def generate(node, indent): # takes in the root node and outputs the renpy text 
         out += f'define {node.define_name} = {node.define_val}'
         return out
 
-    
-    
-    
-# label = stored_vals['labels']['start']
+    if isinstance(node, Jump):
+        space = " " * indent
+        if node.jump_type == "label":
+            out += f'{space}jump {node.destination}'
+        elif node.jump_type == 'expression':
+            out += f'{space}jump expression {node.destination}'
 
-# output = generate(label, 0).rstrip() + "\n"
+        return out
 
-# print(output)
+        
 
-# print(generate(stored_vals["defaults"]["age"], 0))
-# print(generate(stored_vals["defaults"]["name"], 0))
+    if isinstance(node, Return):
+        space = " " * indent
+        out += f'{space}return'
 
-# print(generate(stored_vals["defines"]["title"], 0))
-# print(generate(stored_vals["defines"]["pi"], 0))
+        return out
 
 output = ""
 

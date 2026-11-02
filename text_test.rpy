@@ -1,7 +1,8 @@
 define e = Character("Eileen")
 
 define title = "My Visual Novel"
-define pi = 3.14
+define num = 10
+define stay = "stay"
 
 default age = 20
 default name = "Eileen"
@@ -9,7 +10,21 @@ default name = "Eileen"
 label start:
     menu:
         "What should I do?"
+
         "Go outside":
             e "I went outside!"
+
         "Stay inside":
-            e "I stayed inside!"
+            jump inside
+
+        "Stay put":
+            jump expression stay
+    return
+
+label inside:
+    e "I stayed inside!"
+    return
+
+label stay:
+    e "I stayed put!"
+    return
